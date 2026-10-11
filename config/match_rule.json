@@ -1,0 +1,44 @@
+{
+  "signal_type": "gtm_leadership_hire",
+
+  "title_terms": [
+    "vp marketing", "vice president marketing", "head of marketing", "director of marketing",
+    "head of growth", "vp growth", "director of growth",
+    "head of demand generation", "vp demand generation", "head of demand gen",
+    "head of revenue", "vp revenue",
+    "vp sales", "head of sales", "director of sales",
+    "head of gtm", "vp gtm",
+    "cmo", "chief marketing officer", "cro", "chief revenue officer"
+  ],
+
+  "department_functions": {
+    "marketing": ["marketing", "demand generation", "demand gen"],
+    "growth": ["growth"],
+    "sales": ["sales", "business development"],
+    "revenue": ["revenue"],
+    "gtm": ["gtm", "go to market"]
+  },
+
+  "seniority": {
+    "senior": ["chief", "vp", "vice president", "head", "cmo", "cro"],
+    "director": ["director"],
+    "director_allowed_functions": ["growth"]
+  },
+
+  "unambiguous_title_department": {
+    "vp marketing": "marketing", "head of marketing": "marketing", "director of marketing": "marketing",
+    "cmo": "marketing", "chief marketing officer": "marketing",
+    "head of demand generation": "marketing", "vp demand generation": "marketing", "head of demand gen": "marketing",
+    "head of growth": "growth", "vp growth": "growth", "director of growth": "growth",
+    "vp sales": "sales", "head of sales": "sales", "director of sales": "sales",
+    "head of revenue": "revenue", "cro": "revenue", "chief revenue officer": "revenue",
+    "head of gtm": "gtm", "vp gtm": "gtm"
+  },
+
+  "ambiguous_context_words": [
+    "engineering", "operations", "ops", "product",
+    "design", "data", "platform", "program", "project"
+  ],
+
+  "labels": ["hit", "near_miss", "review", "not_a_hit"]
+}
