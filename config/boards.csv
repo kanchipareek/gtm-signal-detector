@@ -1,14 +1,14 @@
 company_id,name,domain,source,board_token
-69,Airtable,airtable.com,greenhouse,
+69,Airtable,airtable.com,greenhouse,airtable
 151,Airwallex,airwallex.com,greenhouse,
-19,Amplemarket,amplemarket.com,greenhouse,
+19,Amplemarket,amplemarket.com,greenhouse,amplemarket
 1,Amplitude,amplitude.com,greenhouse,
-98,Apollo.io,apollo.io,greenhouse,
-71,Asana,asana.com,greenhouse,
+98,Apollo.io,apollo.io,greenhouse,apollo
+71,Asana,asana.com,greenhouse,asana
 188,Attio,attio.com,greenhouse,
-76,Braze,braze.com,greenhouse,
-42,Brex,brex.com,greenhouse,
-21,BrightHire,brighthire.ai,greenhouse,
+76,Braze,braze.com,greenhouse,braze
+42,Brex,brex.com,greenhouse,brex
+21,BrightHire,brighthire.ai,greenhouse,brighthire
 190,Canva,canva.com,greenhouse,
 105,Caseware,caseware.com,greenhouse,
 64,Circle,circle.com,greenhouse,
@@ -19,8 +19,8 @@ company_id,name,domain,source,board_token
 142,Drata,drata.com,greenhouse,
 79,Drift,drift.com,greenhouse,
 27,Everbridge,everbridge.com,greenhouse,
-209,Exein,exein.io,greenhouse,
-49,Figma,figma.com,greenhouse,
+209,Exein,exein.io,greenhouse,exein
+49,Figma,figma.com,greenhouse,figma
 182,Flock Safety,flocksafety.com,greenhouse,
 7,Floworks,floworks.ai,greenhouse,
 75,Freshworks,freshworks.com,greenhouse,
@@ -30,14 +30,14 @@ company_id,name,domain,source,board_token
 31,HubSpot,hubspot.com,greenhouse,
 32,Intercom,intercom.com,greenhouse,
 189,Loom,loom.com,greenhouse,
-66,Mercury,mercury.com,greenhouse,
-186,Metronome,metronome.com,greenhouse,
+66,Mercury,mercury.com,greenhouse,mercury
+186,Metronome,metronome.com,greenhouse,metronome
 80,Miro,miro.com,greenhouse,
 33,Notion,notion.com,greenhouse,
-52,Okta,okta.com,greenhouse,
+52,Okta,okta.com,greenhouse,okta
 148,OneSignal,onesignal.com,greenhouse,
 175,Oso,osohq.com,greenhouse,
-91,Pendo,pendo.io,greenhouse,
+91,Pendo,pendo.io,greenhouse,pendo
 65,Plaid,plaid.com,greenhouse,
 25,PointClickCare,pointclickcare.com,greenhouse,
 41,Ramp,ramp.com,greenhouse,
@@ -47,14 +47,14 @@ company_id,name,domain,source,board_token
 199,Salesforce,salesforce.com,greenhouse,
 177,Sierra,sierra.ai,greenhouse,
 68,Snyk,snyk.io,greenhouse,
-30,Stripe,stripe.com,greenhouse,
+30,Stripe,stripe.com,greenhouse,stripe
 149,Stytch,stytch.com,greenhouse,
-196,Sumo Logic,sumologic.com,greenhouse,
-194,Tailscale,tailscale.com,greenhouse,
-97,Tines,tines.com,greenhouse,
+196,Sumo Logic,sumologic.com,greenhouse,sumologic
+194,Tailscale,tailscale.com,greenhouse,tailscale
+97,Tines,tines.com,greenhouse,tines
 141,Vanta,vanta.com,greenhouse,
 143,Wiz,wiz.io,greenhouse,
-152,Workato,workato.com,greenhouse,
+152,Workato,workato.com,greenhouse,workato
 198,Workday,workday.com,greenhouse,
 70,Zapier,zapier.com,greenhouse,
 201,Zendesk,zendesk.com,greenhouse,
