@@ -1,8 +1,10 @@
-"""Unit tests for the match engine (src/match.py).
+"""Tests for the match engine.
 
-These cases ARE the project's definition of a GTM leadership-hire signal:
-each one is a rule we agreed on, frozen so it can't silently drift. They run
-offline - no network, no database - and only exercise the classification rule.
+I edit the rule often, so this is the set of cases I re-run after every change.
+If one breaks, I either changed something on purpose or I made a mistake -
+either way I want to catch it here and not in the detector.
+
+Runs offline: no network, no database, just the classification logic.
 
 Run with:  python -m pytest tests/ -v
 """
@@ -59,18 +61,18 @@ def test_classify(title, department, expected):
 
 
 def test_department_spelling_is_equivalent():
-    """The same department written three ways must classify identically."""
+    # Go-To-Market, Go To Market and go_to_market should all give the same answer.
     variants = ["Go-To-Market", "Go To Market", "go_to_market", "GTM"]
     results = {classify("Head of Growth", v, RULE) for v in variants}
     assert results == {"hit"}
 
 
 def test_department_order_does_not_matter():
-    """'Growth Marketing' must not depend on which alias is listed first."""
+    # "Growth Marketing" hits two functions, so I check it doesn't depend on order.
     assert classify("Director of Growth", "Growth Marketing", RULE) == "hit"
     assert classify("Director of Marketing", "Growth Marketing", RULE) == "near_miss"
 
 
 def test_short_abbreviation_does_not_fire_inside_a_word():
-    """'cro' must not match inside 'Crowd'."""
+    # "cro" used to match inside "Crowd", which was a bug.
     assert classify("Crowd Marketing Lead", "Marketing", RULE) != "hit"

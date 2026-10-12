@@ -1,10 +1,10 @@
-"""Run a .sql file against the shared Project 1 database.
+"""Runs a .sql file against the shared Project 1 database.
 
 Usage:  python scripts/run_sql.py sql/01_signals.sql
 
-The database location comes from the LEAD_DB_PATH environment variable
-(put it in a .env file next to the project). This script never creates the
-database - Project 1 owns it - so if the file isn't there, it stops.
+The database path comes from LEAD_DB_PATH in .env. I don't create the database
+here - Project 1 owns it - so if the path is wrong, this stops instead of
+making an empty file by accident.
 """
 import os
 import sqlite3
