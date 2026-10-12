@@ -42,9 +42,19 @@ def _get(url, attempts=3):
 
 
 def _department(job):
-    """Greenhouse has no departments field - the category lives in metadata."""
-    values = [m.get("value") for m in (job.get("metadata") or []) if m.get("value")]
-    return " ".join(values) if values else None
+    """Greenhouse has no departments field - the category lives in metadata.
+
+    A metadata value is usually a string, but multi-select fields hand back a
+    LIST, so I flatten both into one space-separated string.
+    """
+    parts = []
+    for field in (job.get("metadata") or []):
+        value = field.get("value")
+        if isinstance(value, list):
+            parts.extend(str(v) for v in value if v)
+        elif value:
+            parts.append(str(value))
+    return " ".join(parts) if parts else None
 
 
 def fetch_board(token):
