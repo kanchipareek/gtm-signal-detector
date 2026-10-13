@@ -1,0 +1,3 @@
+# Runtime is standard-library only - no third-party packages needed to run.
+# pytest is only for the test suite.
+pytest

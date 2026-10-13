@@ -6,3 +6,5 @@ data/*.db
 *.db-journal
 logs/*
 !logs/.gitkeep
+ci.db
+

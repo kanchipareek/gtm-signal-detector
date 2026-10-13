@@ -1,0 +1,34 @@
+name: detect
+
+on:
+  schedule:
+    # every 6 hours
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+# Overlap guard: if a run is already going, the next one waits instead of
+# starting a second detector against the same data.
+concurrency:
+  group: detect
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
+      - name: Detector smoke run
+        run: |
+          python scripts/build_ci_db.py
+          LEAD_DB_PATH=ci.db python scripts/run_detector.py
