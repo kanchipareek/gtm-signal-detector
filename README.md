@@ -25,33 +25,37 @@ python -m venv .venv
 source .venv/Scripts/activate     # Windows (Git Bash). macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 python -m pytest tests/ -q        # 44 passed
-
-##Features
-. One signal, done properly — a senior GTM leadership hire, not a vague "job change" feed.
-. Rule in config, not code — the match rule lives in config/match_rule.json; change it without touching Python.
-. Precision-first — unclear postings go to a review queue instead of being guessed at.
-. Idempotent by construction — re-running the detector, or replaying a delivery, never creates a duplicate.
-. Failure-aware delivery — bounded-backoff retries on transient errors, dead-lettering on permanent 4xx.
-. Signed webhook — HMAC over the raw body, constant-time compare, one deterministic effect per event.
-. Scheduled — runs on GitHub Actions every 6 hours, with an overlap guard.
+Features
+One signal, done properly — a senior GTM leadership hire, not a vague "job change" feed.
+Rule in config, not code — the match rule lives in config/match_rule.json; change it without touching Python.
+Precision-first — unclear postings go to a review queue instead of being guessed at.
+Idempotent by construction — re-running the detector, or replaying a delivery, never creates a duplicate.
+Failure-aware delivery — bounded-backoff retries on transient errors, dead-lettering on permanent 4xx.
+Signed webhook — HMAC over the raw body, constant-time compare, one deterministic effect per event.
+Scheduled — runs on GitHub Actions every 6 hours, with an overlap guard.
 
 How it works
-mermaid
 
-flowchart LR
-    CRON["GitHub Actions<br/>cron (6h)"] --> RD
-    GH["Greenhouse<br/>board API"] --> F["src/fetch.py<br/>fetch + retries"]
-    CFG["config/<br/>match_rule.json"] --> M["src/match.py<br/>classify"]
-    F --> M
-    M --> RD["scripts/<br/>run_detector.py"]
-    RD --> DB[("shared SQLite<br/>signals  candidates")]
-    DB --> D["src/deliver.py<br/>sign + retry"]
-    D -->|"signed POST"| W["scripts/<br/>webhook_server.py"]
-    W --> EV[("webhook_events")]
+
+Greenhouse board API
+        │  fetch.py  (bounded retries)
+        ▼
+   match.py  ◄── config/match_rule.json   (the rule lives here)
+        │
+        ▼
+run_detector.py  ◄── GitHub Actions cron (every 6h)
+        │
+        ▼
+ signals table   (shared SQLite, keyed to Project 1's companies)
+        │
+        ▼
+   deliver.py   (signs the body, retries, dead-letters)
+        │  signed POST
+        ▼
+webhook_server.py  ──►  webhook_events   (verified, recorded once)
 A posting moves through four stages: fetch (Greenhouse board API, with retries), classify (the rule from config/match_rule.json), store (a hit becomes a row in signals), and deliver (a signed POST to the webhook, recorded exactly once). Every stage is independent and testable on its own.
 
 Data model
-
 Four tables, all keyed to Project 1's companies(id) — this project reads that identity, it does not rebuild it.
 
 Table	Holds
@@ -86,8 +90,8 @@ python src/deliver.py
 Inspect what was stored:
 
 bash
-python scripts/show_signals.py
 
+python scripts/show_signals.py
 
 Testing
 bash
@@ -95,7 +99,6 @@ bash
 python -m pytest tests/ -v
 tests/test_match.py — 30 cases covering the rule: hits, near-misses, review, department conflicts, and text normalisation.
 tests/test_webhook.py — 14 cases covering failure handling: replay → one row, tampered signature → 401, malformed body → 400, retry exhaustion, dead-letter, and detector re-run.
-
 
 Design decisions
 . Rule-driven, not ML. Explainable, testable, and needs no training data. Every decision traces to a line in config/match_rule.json.
@@ -110,7 +113,6 @@ Known limitations
 . No CRM hand-off — the receiver records events; routing to a CRM is a later project.
 
 
-
 Project structure
 
 
@@ -122,9 +124,11 @@ tests/     test_match.py  test_webhook.py
 docs/      signal_rules.md (first-seen / unchanged / re-posted)
 .github/   workflows/detect.yml (scheduled run)
 
-
 License
 MIT — see LICENSE.
+
+
+
 
 
 
