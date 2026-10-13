@@ -1,8 +1,12 @@
 """Delivers pending signals to the webhook.
 
 Picks up signals that haven't been delivered, signs each one, POSTs it with
-bounded retries, and records the result. Delivery state lives on the signal
-row, so a crash mid-run just means the next run picks up where it left off.
+bounded retries, and records the result.
+
+Retries only make sense for TRANSIENT failures (network errors, 5xx, 429). A
+permanent 4xx stops immediately and the signal is dead-lettered, so it isn't
+retried forever. Delivery state lives on the signal row, so a crash mid-run
+just means the next run picks up where it left off.
 """
 import hashlib
 import hmac
@@ -20,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 TIMEOUT = 10
 EVENT = "gtm_leadership_hire"
+TRANSIENT_CODES = {429, 500, 502, 503, 504}
 
 
 def load_env(path=".env"):
@@ -34,6 +39,13 @@ def load_env(path=".env"):
 
 def sign(secret, body):
     return hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+
+
+def is_transient(status_code, error):
+    """A failure worth retrying: no response, a 5xx, or a rate-limit."""
+    if status_code is None:
+        return True
+    return status_code in TRANSIENT_CODES or 500 <= status_code < 600
 
 
 def build_event(row):
@@ -97,6 +109,7 @@ def deliver_pending(conn, url, secret, max_attempts=3, backoff=1.0):
         signal_id = event["signal_id"]
 
         ok = False
+        permanent = False
         attempt = 0
         status_code = None
         error = None
@@ -113,6 +126,9 @@ def deliver_pending(conn, url, secret, max_attempts=3, backoff=1.0):
             conn.commit()
             if ok:
                 break
+            if not is_transient(status_code, error):
+                permanent = True
+                break
             if attempt < max_attempts:
                 time.sleep(backoff * attempt)
 
@@ -123,6 +139,13 @@ def deliver_pending(conn, url, secret, max_attempts=3, backoff=1.0):
             )
             delivered += 1
             print(f"  delivered signal {signal_id}")
+        elif permanent:
+            conn.execute(
+                "UPDATE signals SET delivery_status='dead', attempts=?, last_error=?, next_retry_at=NULL WHERE id=?",
+                (attempt, error, signal_id),
+            )
+            failed += 1
+            print(f"  dead-lettered signal {signal_id}: {error} (permanent, not retried)")
         else:
             retry_at = (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(timespec="seconds")
             conn.execute(
@@ -130,7 +153,7 @@ def deliver_pending(conn, url, secret, max_attempts=3, backoff=1.0):
                 (attempt, error, retry_at, signal_id),
             )
             failed += 1
-            print(f"  failed signal {signal_id}: {error}")
+            print(f"  failed signal {signal_id}: {error} (will retry)")
         conn.commit()
 
     return delivered, failed

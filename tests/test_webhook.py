@@ -180,3 +180,29 @@ def test_detector_rerun_adds_no_duplicate_signal(conn):
     insert()
     conn.commit()
     assert conn.execute("SELECT count(*) FROM signals").fetchone()[0] == 1
+
+def test_sender_retries_transient_5xx(conn, monkeypatch):
+    monkeypatch.setattr(deliver, "post", lambda url, secret, body, key: (503, "http 503"))
+    add_signal(conn)
+    deliver.deliver_pending(conn, "http://x/webhook", SECRET, max_attempts=3, backoff=0.01)
+    assert conn.execute("SELECT count(*) FROM signal_deliveries").fetchone()[0] == 3
+
+
+def test_sender_stops_on_permanent_4xx(conn, monkeypatch):
+    monkeypatch.setattr(deliver, "post", lambda url, secret, body, key: (400, "http 400"))
+    add_signal(conn)
+    delivered, failed = deliver.deliver_pending(
+        conn, "http://x/webhook", SECRET, max_attempts=3, backoff=0.01
+    )
+    assert (delivered, failed) == (0, 1)
+    # only ONE attempt - it did not retry a permanent error
+    assert conn.execute("SELECT count(*) FROM signal_deliveries").fetchone()[0] == 1
+    assert conn.execute("SELECT delivery_status FROM signals").fetchone()[0] == "dead"
+
+
+def test_dead_signal_is_not_retried_next_run(conn, monkeypatch):
+    monkeypatch.setattr(deliver, "post", lambda url, secret, body, key: (400, "http 400"))
+    add_signal(conn)
+    deliver.deliver_pending(conn, "http://x/webhook", SECRET, max_attempts=3, backoff=0.01)
+    delivered, failed = deliver.deliver_pending(conn, "http://x/webhook", SECRET, backoff=0.01)
+    assert (delivered, failed) == (0, 0)
