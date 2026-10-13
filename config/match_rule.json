@@ -11,6 +11,17 @@
     "cmo", "chief marketing officer", "cro", "chief revenue officer"
   ],
 
+  "gtm_function_words": {
+    "marketing": "marketing",
+    "growth": "growth",
+    "sales": "sales",
+    "revenue": "revenue",
+    "gtm": "gtm",
+    "go to market": "gtm",
+    "demand generation": "marketing",
+    "demand gen": "marketing"
+  },
+
   "department_functions": {
     "marketing": ["marketing", "demand generation", "demand gen"],
     "growth": ["growth"],
@@ -37,7 +48,8 @@
 
   "ambiguous_context_words": [
     "engineering", "operations", "ops", "product",
-    "design", "data", "platform", "program", "project"
+    "design", "data", "platform", "program", "project",
+    "architect", "architecture"
   ],
 
   "labels": ["hit", "near_miss", "review", "not_a_hit"]

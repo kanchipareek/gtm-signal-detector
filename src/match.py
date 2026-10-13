@@ -1,30 +1,18 @@
 """Match engine for Project 2: classify a job posting as a GTM leadership-hire signal.
 
 This module holds the LOGIC. The terms it uses live in config/match_rule.json
-(data). Keeping them apart means the rule can be changed without editing code,
-and the detector and the labelled test set both read one source of truth.
-
-Text is NORMALISED first (lowercased; any non-alphanumeric run becomes a single
-space), so 'VP, Marketing' == 'vp marketing', and a department spelled
-'Go-To-Market', 'go_to_market' or 'Go To Market' all resolve to {'gtm'}.
-Department resolution is a SET (order-independent), so 'Growth Marketing'
-resolves to {'growth', 'marketing'} regardless of list order.
+(data). Text is normalised first, and term matching uses word boundaries.
 
 Decision order (precision-first: uncertain cases go to review, never a silent hit):
   1. Department present but maps to NO GTM function, while the title names one
-     -> conflict -> review   (a clear title must not silently override a
-                              conflicting department field)
-  2. Title names a GTM function the department does not contain
-     ('gtm' is the umbrella, so it never conflicts) -> review
+     -> conflict -> review
+  2. Title and department name different GTM functions -> conflict -> review
   3. An ambiguous context word appears in a GTM leadership title -> review
-  4. No established GTM function at all:
-       - title carries a GTM theme  -> near_miss
-       - otherwise                  -> not_a_hit
-  5. Function is GTM -> apply the seniority gate:
-       - chief / vp / head / cmo / cro        -> hit
-       - director, and function is Growth     -> hit
-       - director, any other GTM function     -> near_miss
-       - below director                       -> near_miss
+  4. HIT requires the TITLE ITSELF to name a GTM function:
+       - senior title + a GTM function in the title        -> hit
+       - director + growth                                 -> hit
+     The department can flag a conflict, but it can NOT create a hit on its own.
+  5. Otherwise: a GTM function anywhere -> near_miss, else not_a_hit.
 """
 import json
 import re
@@ -67,8 +55,20 @@ def _first_title_term(title, rule):
     return None
 
 
+def _title_functions(title, rule):
+    """Every GTM function the TITLE implies (function words + curated terms)."""
+    funcs = set()
+    for word, func in rule["gtm_function_words"].items():
+        if _has(title, word):
+            funcs.add(func)
+    for term, func in rule["unambiguous_title_department"].items():
+        if _has(title, term):
+            funcs.add(func)
+    return funcs
+
+
 def _department_functions(dept, rule):
-    """Return the set of GTM functions a department maps to (order-independent)."""
+    """The set of GTM functions a department maps to (order-independent)."""
     dept_n = _norm_text(dept)
     if not dept_n:
         return frozenset()
@@ -79,13 +79,6 @@ def _department_functions(dept, rule):
     return frozenset(found)
 
 
-def _title_function(title, rule):
-    for term, func in rule["unambiguous_title_department"].items():
-        if _has(title, term):
-            return func
-    return None
-
-
 def classify(title, department, rule):
     """Return one of: 'hit', 'near_miss', 'review', 'not_a_hit'."""
     title_l = _norm_text(title)
@@ -93,38 +86,31 @@ def classify(title, department, rule):
 
     seniority = _seniority(title_l, rule)
     title_term = _first_title_term(title_l, rule)
+    title_funcs = _title_functions(title_l, rule)
+    names_gtm = bool(title_term) or bool(title_funcs)
     has_ambiguous = any(_has(title_l, w) for w in rule["ambiguous_context_words"])
 
     dept_funcs = _department_functions(department, rule)
-    title_func = _title_function(title_l, rule)
 
     # 1. Department present but not GTM, while the title names a GTM function -> conflict
-    if dept_present and not dept_funcs and title_func is not None:
+    if dept_present and not dept_funcs and names_gtm:
         return REVIEW
 
-    # 2. Title names a GTM function the department does not contain (gtm is the umbrella)
-    if dept_funcs and title_func is not None:
-        if "gtm" not in dept_funcs and title_func not in dept_funcs:
-            return REVIEW
+    # 2. Title and department name different GTM functions -> conflict
+    if dept_funcs and title_funcs and not (dept_funcs & title_funcs) and "gtm" not in dept_funcs:
+        return REVIEW
 
     # 3. Ambiguous context word in a GTM leadership title -> review
-    if has_ambiguous and title_term:
+    if has_ambiguous and names_gtm:
         return REVIEW
 
-    # The role's function: prefer the (more specific) title when conclusive,
-    # otherwise fall back to what the department says.
-    functions = frozenset({title_func}) if title_func else dept_funcs
-
-    # 4. No established GTM function
-    if not functions:
-        if title_term:
-            return NEAR_MISS
-        return NOT_A_HIT
-
-    # 5. Function is GTM -> apply the seniority gate
-    if seniority == "senior":
+    # 4. A hit needs the TITLE to name a GTM function - the department can't create one
+    if seniority == "senior" and names_gtm:
         return HIT
-    if seniority == "director":
-        allowed = set(rule["seniority"]["director_allowed_functions"])
-        return HIT if functions & allowed else NEAR_MISS
-    return NEAR_MISS
+    if seniority == "director" and "growth" in title_funcs:
+        return HIT
+
+    # 5. Near-miss if a GTM function shows up anywhere, otherwise not a hit
+    if title_funcs or dept_funcs:
+        return NEAR_MISS
+    return NOT_A_HIT
